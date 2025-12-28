@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>土豆资源分享</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#4080FF',
+                        accent: '#69B1FF',
+                        light: '#E8F3FF',
+                        dark: '#0E42D2'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 4px 20px rgba(22, 93, 255, 0.08);
+                transition: all 0.3s ease;
+            }
+            .card-shadow:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 30px rgba(22, 93, 255, 0.15);
+            }
+            .fade-in {
+                animation: fadeIn 0.6s ease forwards;
+                opacity: 0;
+            }
+            .slide-up {
+                animation: slideUp 0.5s ease forwards;
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { 
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to { 
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 顶部导航 -->
+    <header class="bg-primary text-white shadow-md transition-all duration-300">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold flex items-center">
+                土豆资源分享平台
+            </h1>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 资源分类区 -->
+        <div id="resource-container" class="space-y-8">
+            <!-- 加载提示 -->
+            <div id="loading" class="text-center py-16">
+                <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+                <p class="mt-4 text-gray-600 text-lg">正在加载...</p>
+            </div>
+
+            <!-- 资源分类将通过JS动态生成 -->
+        </div>
+    </main>
+
+
+
+    <script>
+        // 配置文件URL（远程网页链接）
+        const CONFIG_URL = 'shuju.txt';
+        
+        // DOM元素
+        const resourceContainer = document.getElementById('resource-container');
+        const loadingIndicator = document.getElementById('loading');
+
+        // 加载并渲染资源
+        async function loadResources() {
+            try {
+                const response = await fetch(CONFIG_URL);
+                
+                if (!response.ok) {
+                    throw new Error('配置文件加载失败');
+                }
+                
+                const configText = await response.text();
+                const categories = parseTxtConfig(configText);
+                
+                // 隐藏加载提示
+                loadingIndicator.classList.add('fade-in');
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+                }, 300);
+                
+                // 渲染分类和资源（添加动画延迟）
+                renderCategories(categories);
+                
+            } catch (error) {
+                // 显示错误信息
+                loadingIndicator.innerHTML = `
+                    <div class="text-red-500 mb-4"><i class="fa fa-exclamation-circle text-3xl"></i></div>
+                    <p class="text-gray-700 text-lg">出错了！！！</p>
+                    <p class="text-sm text-gray-500 mt-2">${error.message}</p>
+                    <p class="text-sm text-gray-500 mt-1">数据链接链接: ${CONFIG_URL}</p>
+                    <button onclick="location.reload()" class="mt-4 bg-primary text-white px-4 py-2 rounded-lg hover:bg-dark transition-colors">
+                        <i class="fa fa-refresh mr-1"></i>重试
+                    </button>
+                `;
+            }
+        }
+
+        // 解析TXT格式配置
+        function parseTxtConfig(text) {
+            const categories = [];
+            let currentCategory = null;
+            
+            // 按行处理文本，忽略空行和注释行
+            text.split('\n').forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('//')) return;
+                
+                // 检测分类标题行（===分类名称===）
+                if (line.startsWith('===') && line.endsWith('===')) {
+                    const categoryName = line.slice(3, -3).trim();
+                    currentCategory = {
+                        name: categoryName,
+                        resources: []
+                    };
+                    categories.push(currentCategory);
+                } 
+                // 检测资源行（名称|描述|链接）
+                else if (currentCategory && line.includes('|')) {
+                    const [name, description, url] = line.split('|').map(item => item.trim());
+                    if (name && url) {
+                        currentCategory.resources.push({ name, description, url });
+                    }
+                }
+            });
+            
+            return categories;
+        }
+
+        // 渲染分类列表
+        function renderCategories(categories) {
+            if (!categories || categories.length === 0) {
+                resourceContainer.innerHTML = `
+                    <div class="text-center py-16 bg-white rounded-xl shadow-md slide-up">
+                        <i class="fa fa-folder-open text-gray-300 text-5xl mb-4"></i>
+                        <p class="text-gray-500 text-lg">未找到分类</p>
+                        <p class="text-sm text-gray-400 mt-2">请检查网络链接</p>
+                    </div>
+                `;
+                return;
+            }
+
+            categories.forEach((category, index) => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'bg-white rounded-xl shadow-md overflow-hidden slide-up';
+                categoryElement.style.animationDelay = `${index * 0.2}s`;
+                
+                // 分类标题
+                categoryElement.innerHTML = `
+                    <div class="bg-secondary text-white px-6 py-4">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <i class="fa fa-folder mr-2"></i>${category.name}
+                            <span class="ml-2 text-sm bg-white/30 px-3 py-1 rounded-full">
+                                ${category.resources ? category.resources.length : 0}个资源
+                            </span>
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        ${renderResources(category.resources || [])}
+                    </div>
+                `;
+                
+                resourceContainer.appendChild(categoryElement);
+            });
+        }
+
+        // 渲染资源列表
+        function renderResources(resources) {
+            if (!resources || resources.length === 0) {
+                return `
+                    <div class="text-center py-12 text-gray-400">
+                        <i class="fa fa-file-o text-4xl mb-4"></i>
+                        <p class="text-lg">此分类下暂无资源</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${resources.map((resource, index) => `
+                        <div class="border border-gray-100 rounded-xl overflow-hidden card-shadow bg-white group" style="animation-delay: ${index * 0.1}s">
+                            <div class="p-5">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2 flex items-center group-hover:text-primary transition-colors">
+                                    <i class="fa fa-file-text-o text-primary mr-2"></i>${resource.name}
+                                </h3>
+                                <p class="text-gray-600 text-sm mb-5 line-clamp-2 h-12">${resource.description || '无描述信息'}</p>
+                                <a href="${resource.url}" target="_blank" rel="noopener noreferrer" 
+                                   class="inline-flex items-center text-primary hover:text-dark font-medium text-sm transition-all transform group-hover:translate-x-1">
+                                    <i class="fa fa-download mr-1"></i>获取资源
+                                    <i class="fa fa-external-link ml-1 text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 页面加载完成后加载资源
+        document.addEventListener('DOMContentLoaded', loadResources);
+
+        // 滚动时导航栏效果
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 10) {
+                header.classList.add('py-2');
+                header.classList.remove('py-4');
+            } else {
+                header.classList.add('py-4');
+                header.classList.remove('py-2');
+            }
+        });
+    </script>
+</body>
+</html>

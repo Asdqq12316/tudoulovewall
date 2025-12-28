@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时</title>
+    <style>
+        body {
+            background-color: #FFC0CB;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        h1 {
+            font-size: 70px;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .countdown {
+            font-size: 72px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .countdown.animate {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>等</h1>
+    <div class="countdown" id="countdown">1</div>
+
+    <script>
+        const countdownElement = document.getElementById('countdown');
+        let count = 10;
+        
+        const timer = setInterval(() => {
+            count--;
+            countdownElement.textContent = count;
+            
+            // 添加动画效果
+            countdownElement.classList.add('animate');
+            setTimeout(() => {
+                countdownElement.classList.remove('animate');
+            }, 300);
+            
+            if (count <= 0) {
+                clearInterval(timer);
+                window.location.href = '1.html';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

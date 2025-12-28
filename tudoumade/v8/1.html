@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>土豆文件工具V8</title>
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f5f7fa;
+            color: #2d3748;
+            padding-bottom: 60px;
+            overflow-x: hidden;
+        }
+        
+        .card {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .btn {
+            transition: all 0.2s ease;
+            padding: 10px 16px;
+            font-weight: 500;
+            width: 120px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .btn:active {
+            background-color: #e5e7eb;
+        }
+        
+        .file-input-label {
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-label:hover {
+            background-color: #f0f4f8;
+        }
+        
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        
+        /* 电脑版导航栏样式 */
+        .desktop-nav {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 22%;
+            background-color: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 12px;
+        }
+        
+        /* 移动端导航栏样式 */
+        .mobile-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            padding: 12px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        /* 进度条窗口样式 */
+        .progress-window {
+            background-color: white;
+            padding: 20px;
+            width: 90vw;
+            max-width: 400px;
+            position: relative;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f4f8;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .close-btn:hover {
+            background-color: #e5e7eb;
+        }
+        
+        /* 移动端内容区域 */
+        .mobile-content {
+            width: 100%;
+            padding: 16px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- 欢迎弹窗 -->
+    <div id="welcomeModal" class="modal">
+        <div class="card w-full max-w-2xl mx-4 p-6">
+            <h2 class="text-2xl font-bold text-center mb-6">土豆文件工具V8 跟新公告</h2>
+            <div class="space-y-4 mb-6">
+                <div class="flex items-start">
+                    <div class="w-6 h-6 bg-blue-500 flex items-center justify-center text-white mr-3 mt-1">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>优化了UI界面</p>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-6 h-6 bg-blue-500 flex items-center justify-center text-white mr-3 mt-1">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>优化了运行速度</p>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-6 h-6 bg-blue-500 flex items-center justify-center text-white mr-3 mt-1">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>修复了一些已知bug</p>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-6 h-6 bg-blue-500 flex items-center justify-center text-white mr-3 mt-1">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>官方QQ群：674418637</p>
+                </div>
+            </div>
+            <button id="enterBtn" class="w-full py-3 bg-blue-500 text-white font-medium hover:bg-blue-600 btn">
+                进入加密功能
+            </button>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div class="hidden" id="mainApp">
+        <!-- 电脑版导航按钮 -->
+        <div class="desktop-nav hidden" id="desktopNav">
+            <button id="encryptBtn" class="btn bg-blue-500 text-white hover:bg-blue-600">
+                <i class="fas fa-lock mr-2"></i>加密
+            </button>
+            <button id="decryptBtn" class="btn bg-green-500 text-white hover:bg-green-600">
+                <i class="fas fa-unlock mr-2"></i>解密
+            </button>
+            <button id="aboutBtn" class="btn bg-gray-500 text-white hover:bg-gray-600">
+                <i class="fas fa-info-circle mr-2"></i>关于
+            </button>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="card min-h-[400px]">
+            <!-- 电脑版内容区域 -->
+            <div class="hidden md:block ml-[22%] p-6">
+                <!-- 加密页面 -->
+                <div id="encryptPage" class="hidden">
+                    <h2 class="text-xl font-bold mb-6 text-center">文件加密</h2>
+                    <div class="mb-6" id="encryptFileArea">
+                        <label for="encryptFile" class="file-input-label block border-2 border-dashed border-gray-300 p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600">点击或拖拽文件到此处</p>
+                            <p class="text-sm text-gray-500 mt-2">选择文件</p>
+                            <input type="file" id="encryptFile" class="hidden">
+                        </label>
+                    </div>
+                    <div id="encryptFileInfo" class="mb-6 hidden">
+                        <div class="bg-gray-50 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium">文件名:</span>
+                                <span id="encryptFileName" class="text-gray-700"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium">文件大小:</span>
+                                <span id="encryptFileSize" class="text-gray-700"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="encryptPassword" class="block text-sm font-medium text-gray-700 mb-1">设置8位数字密码</label>
+                        <input type="password" id="encryptPassword" maxlength="8" pattern="\d{8}" 
+                               class="w-full px-4 py-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="请输入8位数字密码">
+                        <p class="text-xs text-gray-500 mt-1">密码必须为8位纯数字</p>
+                    </div>
+                    <button id="startEncryptBtn" class="w-full py-3 bg-blue-500 text-white font-medium hover:bg-blue-600 btn disabled:opacity-50" disabled>
+                        开始加密
+                    </button>
+                </div>
+
+                <!-- 解密页面 -->
+                <div id="decryptPage" class="hidden">
+                    <h2 class="text-xl font-bold mb-6 text-center">文件解密</h2>
+                    <div class="mb-6" id="decryptFileArea">
+                        <label for="decryptFile" class="file-input-label block border-2 border-dashed border-gray-300 p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600">点击或拖拽加密后文件到此处</p>
+                            <p class="text-sm text-gray-500 mt-2">选择加密后的文件</p>
+                            <input type="file" id="decryptFile" class="hidden" accept=".tudou">
+                        </label>
+                    </div>
+                    <div id="decryptFileInfo" class="mb-6 hidden">
+                        <div class="bg-gray-50 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium">文件名:</span>
+                                <span id="decryptFileName" class="text-gray-700"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium">文件大小:</span>
+                                <span id="decryptFileSize" class="text-gray-700"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="decryptPassword" class="block text-sm font-medium text-gray-700 mb-1">输入8位数字密码</label>
+                        <input type="password" id="decryptPassword" maxlength="8" pattern="\d{8}" 
+                               class="w-full px-4 py-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="请输入8位数字密码">
+                    </div>
+                    <button id="startDecryptBtn" class="w-full py-3 bg-green-500 text-white font-medium hover:bg-green-600 btn disabled:opacity-50" disabled>
+                        开始解密
+                    </button>
+                </div>
+
+                <!-- 关于页面 -->
+                <div id="aboutPage" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4 text-center">土豆文件工具V8</h2>
+                    <p class="text-center text-gray-600">一个由土豆独立开发的文件加解密工具</p>
+                    <p class="text-center text-gray-600">其实是我不想写关于了才这么短</p>
+                    <p class="text-center text-gray-600">官方QQ：674418637</p>
+                </div>
+            </div>
+
+            <!-- 移动端内容区域 -->
+            <div class="mobile-content md:hidden">
+                <!-- 加密页面 -->
+                <div id="mobileEncryptPage" class="hidden">
+                    <h2 class="text-xl font-bold mb-6 text-center">文件加密</h2>
+                    <div class="mb-6" id="mobileEncryptFileArea">
+                        <label for="mobileEncryptFile" class="file-input-label block border-2 border-dashed border-gray-300 p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600">点击或拖拽文件到此处</p>
+                            <p class="text-sm text-gray-500 mt-2">支持所有文件类型</p>
+                            <input type="file" id="mobileEncryptFile" class="hidden">
+                        </label>
+                    </div>
+                    <div id="mobileEncryptFileInfo" class="mb-6 hidden">
+                        <div class="bg-gray-50 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium">文件名:</span>
+                                <span id="mobileEncryptFileName" class="text-gray-700"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium">文件大小:</span>
+                                <span id="mobileEncryptFileSize" class="text-gray-700"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="mobileEncryptPassword" class="block text-sm font-medium text-gray-700 mb-1">设置8位数字密码</label>
+                        <input type="password" id="mobileEncryptPassword" maxlength="8" pattern="\d{8}" 
+                               class="w-full px-4 py-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="请输入8位数字密码">
+                        <p class="text-xs text-gray-500 mt-1">密码必须为8位纯数字</p>
+                    </div>
+                    <button id="mobileStartEncryptBtn" class="w-full py-3 bg-blue-500 text-white font-medium hover:bg-blue-600 btn disabled:opacity-50" disabled>
+                        开始加密
+                    </button>
+                </div>
+
+                <!-- 解密页面 -->
+                <div id="mobileDecryptPage" class="hidden">
+                    <h2 class="text-xl font-bold mb-6 text-center">文件解密</h2>
+                    <div class="mb-6" id="mobileDecryptFileArea">
+                        <label for="mobileDecryptFile" class="file-input-label block border-2 border-dashed border-gray-300 p-8 text-center cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-600">点击或拖拽加密后的文件到此处</p>
+                            <p class="text-sm text-gray-500 mt-2">请选择加密后的文件</p>
+                            <input type="file" id="mobileDecryptFile" class="hidden" accept=".tudou">
+                        </label>
+                    </div>
+                    <div id="mobileDecryptFileInfo" class="mb-6 hidden">
+                        <div class="bg-gray-50 p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium">文件名:</span>
+                                <span id="mobileDecryptFileName" class="text-gray-700"></span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium">文件大小:</span>
+                                <span id="mobileDecryptFileSize" class="text-gray-700"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="mobileDecryptPassword" class="block text-sm font-medium text-gray-700 mb-1">输入8位数字密码</label>
+                        <input type="password" id="mobileDecryptPassword" maxlength="8" pattern="\d{8}" 
+                               class="w-full px-4 py-2 border border-gray-300 focus:ring-blue-500 focus:border-blue-500" 
+                               placeholder="请输入8位数字密码">
+                    </div>
+                    <button id="mobileStartDecryptBtn" class="w-full py-3 bg-green-500 text-white font-medium hover:bg-green-600 btn disabled:opacity-50" disabled>
+                        开始解密
+                    </button>
+                </div>
+
+                <!-- 关于页面 -->
+                <div id="mobileAboutPage" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4 text-center">土豆文件工具V8</h2>
+                    <p class="text-center text-gray-600">由土豆独立开发的文件加解密工具</p>
+                    <p class="text-center text-gray-600">其实是我不想写关于了才这么短</p>
+                    <p class="text-center text-gray-600">官方QQ：674418637</p>
+                </div>
+            </div>
+
+            <!-- 进度条弹窗 -->
+            <div id="progressModal" class="modal hidden">
+                <div class="progress-window">
+                    <div class="close-btn" id="progressCloseBtn">
+                        <i class="fas fa-times text-gray-600"></i>
+                    </div>
+                    <h3 id="progressTitle" class="text-xl font-bold mb-4 text-center">正在处理文件...</h3>
+                    <div class="w-full bg-gray-200 h-4 mb-4">
+                        <div id="progressBar" class="progress-bar bg-blue-500 h-4" style="width: 0%"></div>
+                    </div>
+                    <p id="progressText" class="text-sm text-gray-600 text-center mb-4">0%</p>
+                    <div class="flex justify-center">
+                        <a id="downloadLink" href="#" class="px-6 py-2 bg-blue-500 text-white font-medium hover:bg-blue-600 btn hidden">
+                            <i class="fas fa-download mr-2"></i>下载文件
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端导航栏 -->
+    <div class="mobile-nav hidden" id="mobileNav">
+        <button id="mobileEncryptBtn" class="btn bg-blue-500 text-white hover:bg-blue-600">
+            <i class="fas fa-lock"></i>
+        </button>
+        <button id="mobileDecryptBtn" class="btn bg-green-500 text-white hover:bg-green-600">
+            <i class="fas fa-unlock"></i>
+        </button>
+        <button id="mobileAboutBtn" class="btn bg-gray-500 text-white hover:bg-gray-600">
+            <i class="fas fa-info-circle"></i>
+        </button>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设备类型检测
+            function checkDeviceType() {
+                const aspectRatio = window.innerWidth / window.innerHeight;
+                if (aspectRatio > 1.5) {
+                    // 电脑设备
+                    document.getElementById('desktopNav').classList.remove('hidden');
+                    document.getElementById('mobileNav').classList.add('hidden');
+                    document.getElementById('mainApp').classList.add('container', 'mx-auto', 'px-4', 'py-8', 'max-w-4xl');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                } else {
+                    // 移动设备
+                    document.getElementById('desktopNav').classList.add('hidden');
+                    document.getElementById('mobileNav').classList.remove('hidden');
+                    document.getElementById('mainApp').classList.remove('container', 'mx-auto', 'px-4', 'py-8', 'max-w-4xl');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                }
+            }
+
+            // 初始化时检测设备类型
+            checkDeviceType();
+            
+            // 窗口大小改变时重新检测
+            window.addEventListener('resize', checkDeviceType);
+
+            // 显示欢迎弹窗
+            const welcomeModal = document.getElementById('welcomeModal');
+            
+            // 进入按钮点击事件
+            document.getElementById('enterBtn').addEventListener('click', function() {
+                welcomeModal.classList.add('hidden');
+                checkDeviceType();
+                showPage('encryptPage');
+            });
+            
+            // 电脑版导航按钮点击事件
+            document.getElementById('encryptBtn').addEventListener('click', function() {
+                showPage('encryptPage');
+            });
+            
+            document.getElementById('decryptBtn').addEventListener('click', function() {
+                showPage('decryptPage');
+            });
+            
+            document.getElementById('aboutBtn').addEventListener('click', function() {
+                showPage('aboutPage');
+            });
+            
+            // 移动端导航按钮点击事件
+            document.getElementById('mobileEncryptBtn').addEventListener('click', function() {
+                showPage('mobileEncryptPage');
+            });
+            
+            document.getElementById('mobileDecryptBtn').addEventListener('click', function() {
+                showPage('mobileDecryptPage');
+            });
+            
+            document.getElementById('mobileAboutBtn').addEventListener('click', function() {
+                showPage('mobileAboutPage');
+            });
+            
+            // 显示指定页面
+            function showPage(pageId) {
+                // 隐藏所有页面
+                document.querySelectorAll('[id$="Page"]').forEach(page => {
+                    page.classList.add('hidden');
+                });
+                
+                // 显示目标页面
+                document.getElementById(pageId).classList.remove('hidden');
+            }
+            
+            // 文件选择处理 - 加密
+            document.getElementById('encryptFile').addEventListener('change', function(e) {
+                handleFileSelect(e, 'encrypt');
+            });
+            
+            document.getElementById('mobileEncryptFile').addEventListener('change', function(e) {
+                handleFileSelect(e, 'mobileEncrypt');
+            });
+            
+            // 文件选择处理 - 解密
+            document.getElementById('decryptFile').addEventListener('change', function(e) {
+                handleFileSelect(e, 'decrypt');
+            });
+            
+            document.getElementById('mobileDecryptFile').addEventListener('change', function(e) {
+                handleFileSelect(e, 'mobileDecrypt');
+            });
+            
+            // 处理文件选择
+            function handleFileSelect(e, type) {
+                const file = e.target.files[0];
+                if (file) {
+                    // 隐藏文件选择区域
+                    document.getElementById(`${type}FileArea`).classList.add('hidden');
+                    
+                    // 显示文件信息
+                    document.getElementById(`${type}FileName`).textContent = file.name;
+                    document.getElementById(`${type}FileSize`).textContent = formatFileSize(file.size);
+                    document.getElementById(`${type}FileInfo`).classList.remove('hidden');
+                    
+                    // 启用开始按钮
+                    document.getElementById(`${type === 'mobileEncrypt' ? 'mobileStartEncrypt' : type === 'mobileDecrypt' ? 'mobileStartDecrypt' : type === 'encrypt' ? 'startEncrypt' : 'startDecrypt'}Btn`).disabled = false;
+                }
+            }
+            
+            // 格式化文件大小
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 密码输入验证
+            document.getElementById('encryptPassword').addEventListener('input', function() {
+                validatePassword(this.value, 'startEncryptBtn');
+            });
+            
+            document.getElementById('mobileEncryptPassword').addEventListener('input', function() {
+                validatePassword(this.value, 'mobileStartEncryptBtn');
+            });
+            
+            document.getElementById('decryptPassword').addEventListener('input', function() {
+                validatePassword(this.value, 'startDecryptBtn');
+            });
+            
+            document.getElementById('mobileDecryptPassword').addEventListener('input', function() {
+                validatePassword(this.value, 'mobileStartDecryptBtn');
+            });
+            
+            function validatePassword(value, buttonId) {
+                const isValid = value.length === 8 && /^\d+$/.test(value);
+                document.getElementById(buttonId).disabled = !isValid;
+            }
+            
+            // 开始加密按钮
+            document.getElementById('startEncryptBtn').addEventListener('click', function() {
+                showProgress('加密');
+                simulateProgress('encrypt');
+            });
+            
+            document.getElementById('mobileStartEncryptBtn').addEventListener('click', function() {
+                showProgress('加密');
+                simulateProgress('encrypt');
+            });
+            
+            // 开始解密按钮
+            document.getElementById('startDecryptBtn').addEventListener('click', function() {
+                showProgress('解密');
+                simulateProgress('decrypt');
+            });
+            
+            document.getElementById('mobileStartDecryptBtn').addEventListener('click', function() {
+                showProgress('解密');
+                simulateProgress('decrypt');
+            });
+            
+            // 显示进度条
+            function showProgress(action) {
+                document.getElementById('progressTitle').textContent = `正在${action}文件...`;
+                document.getElementById('progressModal').classList.remove('hidden');
+                document.getElementById('downloadLink').classList.add('hidden');
+            }
+            
+            // 模拟进度
+            let progressInterval;
+            function simulateProgress(type) {
+                let progress = 0;
+                const progressBar = document.getElementById('progressBar');
+                const progressText = document.getElementById('progressText');
+                const progressModal = document.getElementById('progressModal');
+                const downloadLink = document.getElementById('downloadLink');
+                
+                // 清除之前的进度
+                if (progressInterval) clearInterval(progressInterval);
+                
+                progressInterval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress > 100) progress = 100;
+                    
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${Math.round(progress)}%`;
+                    
+                    if (progress === 100) {
+                        clearInterval(progressInterval);
+                        
+                        // 模拟生成下载链接
+                        const fileName = type === 'encrypt' ? 'encrypted_file.tudou' : 'decrypted_file';
+                        downloadLink.href = `data:text/plain;charset=utf-8,${encodeURIComponent('这是模拟的' + (type === 'encrypt' ? '加密' : '解密') + '文件内容')}`;
+                        downloadLink.download = fileName;
+                        
+                        // 显示下载按钮
+                        downloadLink.classList.remove('hidden');
+                    }
+                }, 200);
+            }
+            
+            // 关闭按钮点击事件
+            document.getElementById('progressCloseBtn').addEventListener('click', function() {
+                const progressModal = document.getElementById('progressModal');
+                progressModal.classList.add('hidden');
+                
+                // 清除进度
+                if (progressInterval) clearInterval(progressInterval);
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('progressText').textContent = '0%';
+                document.getElementById('downloadLink').classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>土豆文件工具V7</title>
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .window-style {
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .app-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .btn {
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #0078d7;
+            transition: width 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+                z-index: 100;
+                height: 60px;
+            }
+            .main-content {
+                padding-bottom: 80px;
+                min-height: calc(100vh - 80px);
+            }
+            #processBtn, #downloadBtn {
+                position: relative;
+                z-index: 10;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- 欢迎弹窗 -->
+    <div id="welcomeModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="window-style w-full max-w-md mx-4 p-6">
+            <h2 class="text-xl font-semibold mb-4">土豆文件工具V7</h2>
+            <div class="space-y-3 mb-6">
+                <div class="flex items-start">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 flex-shrink-0">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>优化了文件处理操作</p>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 flex-shrink-0">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>修复了一些已知bug</p>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 flex-shrink-0">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>更新了界面UI</p>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 flex-shrink-0">
+                        <i class="fas fa-check text-xs"></i>
+                    </div>
+                    <p>此版本为单独发售版本</p>
+                </div>
+            </div>
+            <button id="enterBtn" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 btn">
+                进入加密功能
+            </button>
+        </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="flex flex-1">
+        <!-- PC端侧边栏 -->
+        <div class="hidden md:flex md:w-48 bg-white border-r border-gray-200 flex-col p-4 space-y-2">
+            <button id="encryptBtn" class="w-full py-2 px-4 text-left rounded hover:bg-gray-100 btn active:bg-gray-200 flex items-center">
+                <i class="fas fa-lock mr-2"></i> 加密
+            </button>
+            <button id="decryptBtn" class="w-full py-2 px-4 text-left rounded hover:bg-gray-100 btn active:bg-gray-200 flex items-center">
+                <i class="fas fa-unlock mr-2"></i> 解密
+            </button>
+            <button id="aboutBtn" class="w-full py-2 px-4 text-left rounded hover:bg-gray-100 btn active:bg-gray-200 flex items-center">
+                <i class="fas fa-info-circle mr-2"></i> 关于
+            </button>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 p-4 md:p-8 main-content">
+            <!-- 页面标题 -->
+            <div class="app-title">文件加解密工具</div>
+            
+            <!-- 加密/解密页面 -->
+            <div id="operationPage" class="window-style p-6 max-w-2xl mx-auto">
+                <h2 id="operationTitle" class="text-xl font-semibold mb-6">文件加密</h2>
+                
+                <div id="fileSelectArea" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors mb-6">
+                    <i class="fas fa-file-upload text-4xl text-gray-400 mb-2"></i>
+                    <p class="text-gray-500">点击或拖放文件到此处</p>
+                    <input type="file" id="fileInput" class="hidden">
+                </div>
+                
+                <div id="passwordArea" class="mb-6">
+                    <label for="passwordInput" class="block text-sm font-medium text-gray-700 mb-1">设置密码 (8位数字)</label>
+                    <input type="password" id="passwordInput" maxlength="8" pattern="\d{8}" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <p class="text-xs text-gray-500 mt-1">请输入8位纯数字作为密码</p>
+                </div>
+                
+                <button id="processBtn" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 btn">
+                    开始加密
+                </button>
+                
+                <div id="progressArea" class="mt-6 hidden">
+                    <div class="flex justify-between mb-1">
+                        <span id="progressText" class="text-sm">正在处理...</span>
+                        <span id="progressPercent" class="text-sm">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div id="resultArea" class="mt-6 hidden">
+                    <div class="bg-green-50 border border-green-200 rounded p-4 mb-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                            <span class="text-green-700">文件处理完成!</span>
+                        </div>
+                    </div>
+                    <button id="downloadBtn" class="w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 btn">
+                        <i class="fas fa-download mr-2"></i> 下载文件
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 关于页面 -->
+            <div id="aboutPage" class="window-style p-8 max-w-2xl mx-auto text-center hidden">
+                <h2 class="text-2xl font-semibold mb-4">土豆文件工具V7</h2>
+                <div class="text-gray-600 space-y-4">
+                    <p>土豆文件工具V7更新时间为2025年10月12日</p>
+                    <p>本网页为静态网站新网站请加QQ：674418637</p>
+                    <p>此版本优化了不同设备黑了使用是历史性的版本</p>
+                    <p>土豆一人制作，拒绝狗叫</p>
+                    <p style="text-align: center; margin-top: 15px; font-size: 14px;">主网站: <a href="http://dwz8.site/tdwjv7/index.html" target="_blank" style="color: #333; text-decoration: underline;">http://dwz8.site/tdwjv7/index.html
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端底部导航 -->
+    <div class="mobile-bottom-nav md:hidden flex justify-around py-3">
+        <button id="mobileEncryptBtn" class="flex flex-col items-center text-gray-600 hover:text-blue-600 btn">
+            <i class="fas fa-lock mb-1"></i>
+            <span class="text-xs">加密</span>
+        </button>
+        <button id="mobileDecryptBtn" class="flex flex-col items-center text-gray-600 hover:text-blue-600 btn">
+            <i class="fas fa-unlock mb-1"></i>
+            <span class="text-xs">解密</span>
+        </button>
+        <button id="mobileAboutBtn" class="flex flex-col items-center text-gray-600 hover:text-blue-600 btn">
+            <i class="fas fa-info-circle mb-1"></i>
+            <span class="text-xs">关于</span>
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 欢迎弹窗
+            const welcomeModal = document.getElementById('welcomeModal');
+            const enterBtn = document.getElementById('enterBtn');
+            
+            enterBtn.addEventListener('click', function() {
+                welcomeModal.classList.add('hidden');
+            });
+            
+            // 页面切换
+            const operationPage = document.getElementById('operationPage');
+            const aboutPage = document.getElementById('aboutPage');
+            const operationTitle = document.getElementById('operationTitle');
+            const passwordArea = document.getElementById('passwordArea');
+            const processBtn = document.getElementById('processBtn');
+            
+            // PC端按钮
+            const encryptBtn = document.getElementById('encryptBtn');
+            const decryptBtn = document.getElementById('decryptBtn');
+            const aboutBtn = document.getElementById('aboutBtn');
+            
+            // 移动端按钮
+            const mobileEncryptBtn = document.getElementById('mobileEncryptBtn');
+            const mobileDecryptBtn = document.getElementById('mobileDecryptBtn');
+            const mobileAboutBtn = document.getElementById('mobileAboutBtn');
+            
+            let currentMode = 'encrypt'; // 'encrypt' or 'decrypt'
+            
+            function showEncryptPage() {
+                currentMode = 'encrypt';
+                operationPage.classList.remove('hidden');
+                aboutPage.classList.add('hidden');
+                operationTitle.textContent = '文件加密';
+                passwordArea.classList.remove('hidden');
+                processBtn.textContent = '开始加密';
+            }
+            
+            function showDecryptPage() {
+                currentMode = 'decrypt';
+                operationPage.classList.remove('hidden');
+                aboutPage.classList.add('hidden');
+                operationTitle.textContent = '文件解密';
+                passwordArea.classList.remove('hidden');
+                processBtn.textContent = '开始解密';
+            }
+            
+            function showAboutPage() {
+                operationPage.classList.add('hidden');
+                aboutPage.classList.remove('hidden');
+            }
+            
+            // PC端事件
+            encryptBtn.addEventListener('click', showEncryptPage);
+            decryptBtn.addEventListener('click', showDecryptPage);
+            aboutBtn.addEventListener('click', showAboutPage);
+            
+            // 移动端事件
+            mobileEncryptBtn.addEventListener('click', showEncryptPage);
+            mobileDecryptBtn.addEventListener('click', showDecryptPage);
+            mobileAboutBtn.addEventListener('click', showAboutPage);
+            
+            // 文件选择
+            const fileSelectArea = document.getElementById('fileSelectArea');
+            const fileInput = document.getElementById('fileInput');
+            let selectedFile = null;
+            
+            fileSelectArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileSelectArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('border-blue-500');
+            });
+            
+            fileSelectArea.addEventListener('dragleave', function() {
+                this.classList.remove('border-blue-500');
+            });
+            
+            fileSelectArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('border-blue-500');
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelection(fileInput.files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files.length) {
+                    handleFileSelection(this.files[0]);
+                }
+            });
+            
+            function handleFileSelection(file) {
+                selectedFile = file;
+                const fileSelectContent = fileSelectArea.querySelector('p');
+                fileSelectContent.textContent = `已选择: ${file.name}`;
+                fileSelectContent.classList.add('text-blue-600');
+            }
+            
+            // 进度条和结果区域
+            const progressArea = document.getElementById('progressArea');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const progressPercent = document.getElementById('progressPercent');
+            const resultArea = document.getElementById('resultArea');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            // 更新进度条函数
+            function updateProgressBar(progress, text) {
+                progressFill.style.width = `${progress}%`;
+                progressPercent.textContent = `${progress}%`;
+                progressText.textContent = text || `正在处理...`;
+            }
+            
+            // 处理按钮点击
+            processBtn.addEventListener('click', function() {
+                if (!selectedFile) {
+                    alert('请先选择文件');
+                    return;
+                }
+                
+                const password = document.getElementById('passwordInput').value;
+                if (!/^\d{8}$/.test(password)) {
+                    alert('请输入8位数字密码');
+                    return;
+                }
+                
+                // 显示进度条
+                progressArea.classList.remove('hidden');
+                resultArea.classList.add('hidden');
+                processBtn.disabled = true;
+                
+                // 在移动设备上，点击按钮后自动滚动到进度条
+                if (window.innerWidth <= 768) {
+                    progressArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                if (currentMode === 'encrypt') {
+                    encryptFile(selectedFile, password);
+                } else {
+                    decryptFile(selectedFile, password);
+                }
+            });
+            
+            // 加密文件核心算法
+            function encryptFile(file, password) {
+                // 进度阶段定义
+                const progressStages = [
+                    { percent: 20, text: '读取文件中...' },
+                    { percent: 50, text: '转换为16进制...' },
+                    { percent: 80, text: '添加密码信息...' },
+                    { percent: 100, text: '处理完成' }
+                ];
+                
+                // 重置进度条
+                updateProgressBar(0);
+                
+                const reader = new FileReader();
+                let stageIndex = 0;
+                let progressInterval;
+                
+                // 启动进度更新
+                progressInterval = setInterval(() => {
+                    if (stageIndex < progressStages.length) {
+                        updateProgressBar(progressStages[stageIndex].percent, progressStages[stageIndex].text);
+                        stageIndex++;
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 300);
+                
+                reader.onload = function(e) {
+                    try {
+                        // 处理文件
+                        const arrayBuffer = e.target.result;
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        let hexString = '';
+                        
+                        for (let i = 0; i < uint8Array.length; i++) {
+                            hexString += uint8Array[i].toString(16).padStart(2, '0');
+                        }
+                        
+                        // 追加密码
+                        hexString += password;
+                        
+                        // 转换回字节
+                        const encryptedBytes = new Uint8Array(hexString.length / 2);
+                        for (let i = 0; i < hexString.length; i += 2) {
+                            encryptedBytes[i / 2] = parseInt(hexString.substr(i, 2), 16);
+                        }
+                        
+                        // 确保进度条完成
+                        clearInterval(progressInterval);
+                        updateProgressBar(100, '处理完成');
+                        
+                        // 准备下载
+                        const fileName = file.name.replace(/\.[^/.]+$/, "") + '.tudou';
+                        const encryptedBlob = new Blob([encryptedBytes], { type: 'application/octet-stream' });
+                        
+                        downloadBtn.onclick = function() {
+                            const url = URL.createObjectURL(encryptedBlob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        };
+                        
+                        // 显示结果区域
+                        setTimeout(() => {
+                            resultArea.classList.remove('hidden');
+                            processBtn.disabled = false;
+                            
+                            // 在移动设备上，自动滚动到下载按钮
+                            if (window.innerWidth <= 768) {
+                                downloadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }, 300);
+                        
+                    } catch (error) {
+                        clearInterval(progressInterval);
+                        updateProgressBar(0, '处理失败');
+                        alert('加密过程出错: ' + error.message);
+                        processBtn.disabled = false;
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // 解密文件核心算法
+            function decryptFile(file, password) {
+                // 进度阶段定义
+                const progressStages = [
+                    { percent: 20, text: '读取文件中...' },
+                    { percent: 50, text: '验证文件格式...' },
+                    { percent: 80, text: '验证密码并解密...' },
+                    { percent: 100, text: '处理完成' }
+                ];
+                
+                // 重置进度条
+                updateProgressBar(0);
+                
+                const reader = new FileReader();
+                let stageIndex = 0;
+                let progressInterval;
+                
+                // 启动进度更新
+                progressInterval = setInterval(() => {
+                    if (stageIndex < progressStages.length) {
+                        updateProgressBar(progressStages[stageIndex].percent, progressStages[stageIndex].text);
+                        stageIndex++;
+                    } else {
+                        clearInterval(progressInterval);
+                    }
+                }, 300);
+                
+                reader.onload = function(e) {
+                    try {
+                        // 处理文件
+                        const arrayBuffer = e.target.result;
+                        const uint8Array = new Uint8Array(arrayBuffer);
+                        let hexString = '';
+                        
+                        for (let i = 0; i < uint8Array.length; i++) {
+                            hexString += uint8Array[i].toString(16).padStart(2, '0');
+                        }
+                        
+                        // 验证并移除密码
+                        if (hexString.length < 16) {
+                            throw new Error('文件格式不正确');
+                        }
+                        
+                        const storedPassword = hexString.slice(-8);
+                        if (storedPassword !== password) {
+                            throw new Error('密码错误，无法解密');
+                        }
+                        
+                        const decryptedHex = hexString.slice(0, -8);
+                        
+                        // 转换回字节
+                        const decryptedBytes = new Uint8Array(decryptedHex.length / 2);
+                        for (let i = 0; i < decryptedHex.length; i += 2) {
+                            decryptedBytes[i / 2] = parseInt(decryptedHex.substr(i, 2), 16);
+                        }
+                        
+                        // 确保进度条完成
+                        clearInterval(progressInterval);
+                        updateProgressBar(100, '处理完成');
+                        
+                        // 准备下载
+                        let originalName = file.name;
+                        if (originalName.endsWith('.tudou')) {
+                            originalName = originalName.slice(0, -6);
+                        }
+                        
+                        const decryptedBlob = new Blob([decryptedBytes], { type: 'application/octet-stream' });
+                        
+                        downloadBtn.onclick = function() {
+                            const url = URL.createObjectURL(decryptedBlob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = originalName;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        };
+                        
+                        // 显示结果区域
+                        setTimeout(() => {
+                            resultArea.classList.remove('hidden');
+                            processBtn.disabled = false;
+                            
+                            // 在移动设备上，自动滚动到下载按钮
+                            if (window.innerWidth <= 768) {
+                                downloadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }, 300);
+                        
+                    } catch (error) {
+                        clearInterval(progressInterval);
+                        updateProgressBar(0, '处理失败');
+                        alert('解密过程出错: ' + error.message);
+                        processBtn.disabled = false;
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // 默认显示加密页面
+            showEncryptPage();
+            
+            // 移动端自动调整布局
+            function adjustMobileLayout() {
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.main-content').style.paddingBottom = '80px';
+                }
+            }
+            
+            // 初始调用一次
+            adjustMobileLayout();
+            // 窗口大小变化时重新调整
+            window.addEventListener('resize', adjustMobileLayout);
+        });
+    </script>
+</body>
+</html>

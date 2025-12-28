@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>你是谁</title>
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <style>
+        body {
+            background-color: #3b82f6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        .btn {
+            transition: all 0.2s ease;
+            width: 200px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1 class="text-4xl font-bold text-black mb-8">你是谁</h1>
+    <div style="text-align: center; margin: 0px 0; color: #333;">点击你的名字
+    
+    <div class="bg-gray-200 p-8 rounded-lg">
+        <div class="flex flex-col space-y-4">
+            <a href="1.html" class="btn bg-purple-600 text-white py-3 px-6 rounded text-lg font-medium text-center">
+                体委
+            </a>
+            
+            <a href="2.html" class="btn bg-purple-600 text-white py-3 px-6 rounded text-lg font-medium text-center">
+                蟹老板
+            </a>
+        </div>
+    </div>
+</body>
+</html>
